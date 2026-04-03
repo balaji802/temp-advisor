@@ -1,1 +1,292 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Temp Advisor — Smart Storage Temperature & Humidity Guide</title>
+  <meta name="description" content="AI-powered temperature and humidity recommendations for storing fruits, vegetables, dairy and more. Get live local weather data and photo scanning.">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #ffffff; --bg2: #f5f5f3; --bg3: #eeede9;
+      --text: #1a1a1a; --text2: #666660; --text3: #999994;
+      --border: rgba(0,0,0,0.1); --border2: rgba(0,0,0,0.18);
+      --success-bg: #eaf3de; --success-border: rgba(59,109,17,0.25); --success-text: #27500a;
+      --warning-bg: #faeeda; --warning-border: rgba(133,79,11,0.25); --warning-text: #633806;
+      --info-bg: #e6f1fb; --info-text: #0c447c;
+      --radius: 8px; --radius-lg: 12px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1c1a; --bg2: #252523; --bg3: #2e2e2b;
+        --text: #f0efe9; --text2: #9a9991; --text3: #666660;
+        --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.18);
+        --success-bg: #173404; --success-border: rgba(150,196,89,0.2); --success-text: #c0dd97;
+        --warning-bg: #412402; --warning-border: rgba(239,159,39,0.2); --warning-text: #fac775;
+        --info-bg: #042c53; --info-text: #b5d4f4;
+      }
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg3); color: var(--text); min-height: 100vh; line-height: 1.5; }
+    header { background: var(--bg); border-bottom: 0.5px solid var(--border); padding: 1rem 1.5rem; display: flex; align-items: center; gap: 12px; }
+    .logo { width: 36px; height: 36px; background: var(--text); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .app-name { font-size: 17px; font-weight: 600; }
+    .app-tagline { font-size: 12px; color: var(--text2); }
+    .container { max-width: 680px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+    .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; }
+    .slabel { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 10px; }
+    .step-bar { display: flex; margin-bottom: 1.5rem; }
+    .step { flex: 1; text-align: center; font-size: 12px; padding: 7px 4px; color: var(--text3); border-bottom: 2px solid var(--border); transition: all 0.2s; }
+    .step.active { color: var(--text); border-bottom-color: var(--text); font-weight: 600; }
+    .step.done { color: var(--text2); border-bottom-color: var(--border2); }
+    .upload-zone { border: 1.5px dashed var(--border2); border-radius: var(--radius-lg); padding: 2rem 1rem; text-align: center; cursor: pointer; transition: background 0.15s; margin-bottom: 1rem; }
+    .upload-zone:hover { background: var(--bg2); }
+    .upload-zone input { display: none; }
+    .preview-img { width: 100%; max-height: 200px; object-fit: cover; border-radius: var(--radius); margin-bottom: 10px; display: none; }
+    .storage-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .storage-btn { padding: 10px 12px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: transparent; cursor: pointer; font-size: 13px; font-family: inherit; color: var(--text2); text-align: left; transition: all 0.15s; }
+    .storage-btn:hover { background: var(--bg2); }
+    .storage-btn.active { background: var(--text); color: var(--bg); border-color: transparent; }
+    .storage-btn .sb-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+    .storage-btn .sb-temp { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+    .btn { padding: 9px 20px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: transparent; cursor: pointer; font-size: 14px; font-family: inherit; color: var(--text); transition: background 0.12s, transform 0.1s; }
+    .btn:hover { background: var(--bg2); }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--text); color: var(--bg); border-color: transparent; }
+    .btn-primary:hover { opacity: 0.88; background: var(--text); }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .chips-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; background: var(--bg2); border: 0.5px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 13px; }
+    .chip-x { cursor: pointer; color: var(--text3); font-size: 16px; line-height: 1; }
+    input[type="text"] { width: 100%; padding: 9px 12px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: transparent; color: var(--text); font-size: 14px; font-family: inherit; margin-bottom: 10px; outline: none; transition: border-color 0.15s; }
+    input[type="text"]:focus { border-color: var(--text); }
+    .stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; margin-bottom: 1rem; }
+    .stat-card { background: var(--bg2); border-radius: var(--radius); padding: 0.75rem 1rem; }
+    .stat-val { font-size: 20px; font-weight: 600; }
+    .stat-lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
+    .rec-card { border-radius: var(--radius); padding: 0.9rem 1rem; margin-bottom: 10px; border: 0.5px solid; }
+    .rec-card.ok { background: var(--success-bg); border-color: var(--success-border); }
+    .rec-card.warn { background: var(--warning-bg); border-color: var(--warning-border); }
+    .rec-name { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+    .rec-detail { font-size: 13px; color: var(--text2); margin-bottom: 3px; }
+    .rec-status { font-size: 12px; font-weight: 600; margin-top: 6px; }
+    .ok .rec-status { color: var(--success-text); }
+    .warn .rec-status { color: var(--warning-text); }
+    .hum-section { margin-top: 8px; padding-top: 8px; border-top: 0.5px solid var(--border); }
+    .hum-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .hum-label { font-size: 12px; color: var(--text2); }
+    .hum-tag { font-size: 11px; padding: 2px 8px; border-radius: var(--radius); font-weight: 600; }
+    .hum-bar-wrap { height: 5px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+    .hum-bar { height: 100%; border-radius: 4px; transition: width 0.5s; }
+    .loader { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border2); border-top-color: var(--text); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .divider { border: none; border-top: 0.5px solid var(--border); margin: 1.25rem 0; }
+    .weather-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
+    .weather-big { font-size: 30px; font-weight: 600; }
+    .weather-unit { font-size: 15px; color: var(--text2); }
+    footer { text-align: center; padding: 2rem 1rem; font-size: 12px; color: var(--text3); }
+    footer a { color: var(--text2); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="logo">🌡️</div>
+  <div>
+    <div class="app-name">Temp Advisor</div>
+    <div class="app-tagline">Smart storage temperature & humidity guide</div>
+  </div>
+</header>
+<div class="container">
+  <div class="step-bar">
+    <div class="step active" id="s1">1. Location</div>
+    <div class="step" id="s2">2. Items</div>
+    <div class="step" id="s3">3. Results</div>
+  </div>
+  <div id="step1">
+    <div class="card">
+      <div class="slabel">Outdoor conditions</div>
+      <div id="weather-loading" style="color:var(--text2);font-size:14px"><span class="loader"></span> Detecting your location...</div>
+      <div id="weather-data" style="display:none">
+        <div class="weather-row">
+          <span class="weather-big" id="loc-temp">—</span><span class="weather-unit">°C</span>
+          <span style="margin-left:16px" class="weather-big" id="loc-hum">—</span><span class="weather-unit">% RH</span>
+        </div>
+        <div style="font-size:13px;color:var(--text2)" id="loc-meta"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="slabel">Storage type</div>
+      <div class="storage-grid">
+        <button class="storage-btn active" data-val="fridge" onclick="selectStorage(this)"><span class="sb-icon">🧊</span> Refrigerator<div class="sb-temp">0 – 5°C · 80–95% RH</div></button>
+        <button class="storage-btn" data-val="freezer" onclick="selectStorage(this)"><span class="sb-icon">❄️</span> Freezer<div class="sb-temp">-25 – -15°C · 60–80% RH</div></button>
+        <button class="storage-btn" data-val="pantry" onclick="selectStorage(this)"><span class="sb-icon">🏠</span> Pantry / Room<div class="sb-temp">10 – 25°C · 45–65% RH</div></button>
+        <button class="storage-btn" data-val="warehouse" onclick="selectStorage(this)"><span class="sb-icon">🏭</span> Cold Warehouse<div class="sb-temp">-5 – 8°C · 85–95% RH</div></button>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="goStep2()">Next: Add items →</button>
+  </div>
+  <div id="step2" style="display:none">
+    <div class="card">
+      <div class="slabel">Scan or upload a photo of your items</div>
+      <div class="upload-zone" onclick="document.getElementById('file-in').click()">
+        <input type="file" id="file-in" accept="image/*" onchange="handleImage(event)">
+        <div style="font-size:28px;margin-bottom:8px">📷</div>
+        <div style="font-size:14px;color:var(--text2)">Tap to upload a photo of your fridge or shelf</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px">AI will identify items automatically</div>
+      </div>
+      <img id="preview" class="preview-img">
+      <div id="scan-status" style="display:none;font-size:13px;color:var(--text2);margin-bottom:10px"><span class="loader"></span> Identifying items with AI...</div>
+    </div>
+    <div class="card">
+      <div class="slabel">Or type items manually</div>
+      <input type="text" id="manual-input" placeholder="e.g. apples, milk, cheese (comma separated)">
+      <button class="btn" onclick="addManual()">Add items</button>
+    </div>
+    <div id="chips-section" style="display:none;margin-bottom:1rem">
+      <div class="slabel">Items to analyse</div>
+      <div class="chips-wrap" id="chips"></div>
+    </div>
+    <div class="row">
+      <button class="btn" onclick="goStep1()">← Back</button>
+      <button class="btn btn-primary" id="rec-btn" style="display:none" onclick="getRecommendations()">Get recommendations →</button>
+    </div>
+  </div>
+  <div id="step3" style="display:none">
+    <div class="stat-grid" id="stat-grid"></div>
+    <div id="rec-status" style="display:none;font-size:13px;color:var(--text2);margin-bottom:12px"><span class="loader"></span> Generating recommendations...</div>
+    <div id="recs"></div>
+    <div class="divider"></div>
+    <div class="row">
+      <button class="btn" onclick="goStep2()">← Edit items</button>
+      <button class="btn" onclick="goStep1()">Start over</button>
+    </div>
+  </div>
+</div>
+<footer>Built with AI · <a href="https://github.com/balaji802/temp-advisor" target="_blank">View on GitHub</a></footer>
+<script>
+  const STORAGE = {
+    fridge:    { min:0,   max:5,   ideal:3,   hum:88, humMin:80, humMax:95, label:'Refrigerator' },
+    freezer:   { min:-25, max:-15, ideal:-18, hum:70, humMin:60, humMax:80, label:'Freezer' },
+    pantry:    { min:10,  max:25,  ideal:18,  hum:55, humMin:45, humMax:65, label:'Pantry / Room' },
+    warehouse: { min:-5,  max:8,   ideal:2,   hum:90, humMin:85, humMax:95, label:'Cold Warehouse' },
+  };
+  const ITEM_DB = {
+    apple:{min:0,max:4,ideal:1,hum:90,humMin:85,humMax:95,storage:'fridge',emoji:'🍎'},
+    banana:{min:13,max:15,ideal:14,hum:85,humMin:80,humMax:90,storage:'pantry',emoji:'🍌'},
+    tomato:{min:13,max:21,ideal:18,hum:85,humMin:80,humMax:90,storage:'pantry',emoji:'🍅'},
+    milk:{min:1,max:4,ideal:3,hum:null,humMin:null,humMax:null,storage:'fridge',emoji:'🥛'},
+    cheese:{min:2,max:8,ideal:5,hum:85,humMin:80,humMax:95,storage:'fridge',emoji:'🧀'},
+    carrot:{min:0,max:4,ideal:1,hum:95,humMin:90,humMax:100,storage:'fridge',emoji:'🥕'},
+    potato:{min:4,max:10,ideal:7,hum:90,humMin:85,humMax:95,storage:'pantry',emoji:'🥔'},
+    strawberry:{min:0,max:4,ideal:1,hum:90,humMin:85,humMax:95,storage:'fridge',emoji:'🍓'},
+    meat:{min:0,max:4,ideal:2,hum:null,humMin:null,humMax:null,storage:'fridge',emoji:'🥩'},
+    chicken:{min:0,max:4,ideal:2,hum:null,humMin:null,humMax:null,storage:'fridge',emoji:'🍗'},
+    fish:{min:0,max:2,ideal:1,hum:null,humMin:null,humMax:null,storage:'fridge',emoji:'🐟'},
+    bread:{min:18,max:25,ideal:20,hum:55,humMin:45,humMax:65,storage:'pantry',emoji:'🍞'},
+    butter:{min:2,max:6,ideal:4,hum:null,humMin:null,humMax:null,storage:'fridge',emoji:'🧈'},
+    egg:{min:2,max:6,ideal:4,hum:70,humMin:60,humMax:80,storage:'fridge',emoji:'🥚'},
+    orange:{min:3,max:8,ideal:5,hum:85,humMin:80,humMax:90,storage:'fridge',emoji:'🍊'},
+    grapes:{min:0,max:2,ideal:1,hum:90,humMin:85,humMax:95,storage:'fridge',emoji:'🍇'},
+    mango:{min:10,max:13,ideal:12,hum:85,humMin:80,humMax:90,storage:'pantry',emoji:'🥭'},
+    avocado:{min:2,max:5,ideal:3,hum:85,humMin:80,humMax:90,storage:'fridge',emoji:'🥑'},
+    lettuce:{min:0,max:4,ideal:1,hum:95,humMin:90,humMax:100,storage:'fridge',emoji:'🥬'},
+    spinach:{min:0,max:4,ideal:1,hum:95,humMin:90,humMax:100,storage:'fridge',emoji:'🥬'},
+    onion:{min:0,max:10,ideal:5,hum:65,humMin:60,humMax:70,storage:'pantry',emoji:'🧅'},
+    garlic:{min:0,max:10,ideal:5,hum:65,humMin:60,humMax:70,storage:'pantry',emoji:'🧄'},
+    lemon:{min:5,max:10,ideal:7,hum:85,humMin:80,humMax:90,storage:'fridge',emoji:'🍋'},
+    cucumber:{min:10,max:13,ideal:12,hum:90,humMin:85,humMax:95,storage:'fridge',emoji:'🥒'},
+    pepper:{min:7,max:13,ideal:10,hum:90,humMin:85,humMax:95,storage:'fridge',emoji:'🫑'},
+  };
+  let locationTemp=null,locationHum=null,locationName='',selectedStorage='fridge',items=[];
+  function getEmoji(n){const k=Object.keys(ITEM_DB).find(k=>n.toLowerCase().includes(k));return k?ITEM_DB[k].emoji:'📦';}
+  function getItemData(n){const k=Object.keys(ITEM_DB).find(k=>n.toLowerCase().includes(k));return k?ITEM_DB[k]:null;}
+  navigator.geolocation&&navigator.geolocation.getCurrentPosition(async pos=>{
+    try{
+      const{latitude,longitude}=pos.coords;
+      const wr=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude.toFixed(2)}&longitude=${longitude.toFixed(2)}&current_weather=true&hourly=relativehumidity_2m&forecast_days=1`);
+      const wd=await wr.json();
+      locationTemp=Math.round(wd.current_weather.temperature);
+      locationHum=wd.hourly?.relativehumidity_2m?Math.round(wd.hourly.relativehumidity_2m[0]):null;
+      const gr=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+      const gd=await gr.json();
+      locationName=gd.address.city||gd.address.town||gd.address.state||'your location';
+      document.getElementById('loc-temp').textContent=locationTemp;
+      document.getElementById('loc-hum').textContent=locationHum??'—';
+      document.getElementById('loc-meta').textContent=locationName+' · live outdoor conditions';
+      document.getElementById('weather-loading').style.display='none';
+      document.getElementById('weather-data').style.display='block';
+    }catch(e){document.getElementById('weather-loading').textContent='Could not fetch weather. You can still continue.';}
+  },()=>{document.getElementById('weather-loading').textContent='Location unavailable. Manual mode active.';});
+  function selectStorage(el){document.querySelectorAll('.storage-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');selectedStorage=el.dataset.val;}
+  function goStep1(){show('step1');hide('step2');hide('step3');setSteps(1);}
+  function goStep2(){hide('step1');show('step2');hide('step3');setSteps(2);}
+  function goStep3(){hide('step1');hide('step2');show('step3');setSteps(3);}
+  function show(id){document.getElementById(id).style.display='';}
+  function hide(id){document.getElementById(id).style.display='none';}
+  function setSteps(n){['s1','s2','s3'].forEach((id,i)=>{document.getElementById(id).className='step'+(i+1===n?' active':i+1<n?' done':'');});}
+  function renderChips(){
+    const wrap=document.getElementById('chips');wrap.innerHTML='';
+    items.forEach((item,i)=>{const c=document.createElement('span');c.className='chip';c.innerHTML=`${getEmoji(item)} ${item} <span class="chip-x" onclick="removeItem(${i})">×</span>`;wrap.appendChild(c);});
+    document.getElementById('chips-section').style.display=items.length?'':'none';
+    document.getElementById('rec-btn').style.display=items.length?'':'none';
+  }
+  function removeItem(i){items.splice(i,1);renderChips();}
+  function addManual(){
+    const val=document.getElementById('manual-input').value.trim();if(!val)return;
+    val.split(',').map(s=>s.trim()).filter(Boolean).forEach(s=>{if(!items.includes(s))items.push(s);});
+    document.getElementById('manual-input').value='';renderChips();
+  }
+  document.getElementById('manual-input').addEventListener('keydown',e=>{if(e.key==='Enter')addManual();});
+  async function handleImage(e){
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=async ev=>{
+      const dataUrl=ev.target.result;const base64=dataUrl.split(',')[1];
+      document.getElementById('preview').src=dataUrl;document.getElementById('preview').style.display='block';
+      document.getElementById('scan-status').style.display='block';
+      try{
+        const resp=await fetch('/api/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageBase64:base64,mediaType:file.type,prompt:'List all food items, produce, fruits, vegetables, dairy, or perishables visible in this image. Respond ONLY with a JSON array of simple names like ["apple","milk"]. No markdown, just the JSON array.'})});
+        const data=await resp.json();
+        const found=JSON.parse(data.result.replace(/```json|```/g,'').trim());
+        found.forEach(s=>{if(!items.includes(s))items.push(s);});
+      }catch(err){alert('Could not scan image. Please add items manually.');}
+      document.getElementById('scan-status').style.display='none';renderChips();
+    };
+    reader.readAsDataURL(file);
+  }
+  async function getRecommendations(){
+    goStep3();document.getElementById('rec-status').style.display='block';document.getElementById('recs').innerHTML='';
+    const storage=STORAGE[selectedStorage];
+    const ctx=`Outdoor temp: ${locationTemp!==null?locationTemp+'°C':'unknown'}, humidity: ${locationHum!==null?locationHum+'% RH':'unknown'}, location: ${locationName||'unknown'}. Storage: ${storage.label} (${storage.min}–${storage.max}°C, ${storage.humMin}–${storage.humMax}% RH). Items: ${items.join(', ')}.`;
+    let recs;
+    try{
+      const resp=await fetch('/api/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:`${ctx}\n\nFor each item provide storage advice. Respond ONLY with a JSON array. Each element must have: {"name":"...","idealTemp":<°C>,"minTemp":<number>,"maxTemp":<number>,"idealHumidity":<% or null>,"humidityMin":<number or null>,"humidityMax":<number or null>,"tip":"one short sentence","compatible":true/false,"emoji":"one emoji"}. No markdown, just the JSON array.`})});
+      const data=await resp.json();recs=JSON.parse(data.result.replace(/```json|```/g,'').trim());
+    }catch(e){
+      recs=items.map(name=>{const d=getItemData(name);return d?{name,idealTemp:d.ideal,minTemp:d.min,maxTemp:d.max,idealHumidity:d.hum,humidityMin:d.humMin,humidityMax:d.humMax,tip:'Store at recommended temperature and humidity for best freshness.',compatible:d.storage===selectedStorage,emoji:d.emoji}:{name,idealTemp:5,minTemp:0,maxTemp:10,idealHumidity:70,humidityMin:60,humidityMax:80,tip:'Keep cool and dry.',compatible:true,emoji:'📦'};});
+    }
+    renderRecs(recs,storage);document.getElementById('rec-status').style.display='none';
+  }
+  function humColor(pct){
+    if(pct<30)return{bar:'#378ADD',tagBg:'#e6f1fb',tagText:'#0c447c',label:'Too dry'};
+    if(pct>85)return{bar:'#EF9F27',tagBg:'#faeeda',tagText:'#633806',label:'Too humid'};
+    return{bar:'#639922',tagBg:'#eaf3de',tagText:'#27500a',label:'Good'};
+  }
+  function renderRecs(recs,storage){
+    const compatible=recs.filter(r=>r.compatible),incompatible=recs.filter(r=>!r.compatible);
+    const humItems=recs.filter(r=>r.idealHumidity!=null);
+    const avgHum=humItems.length?Math.round(humItems.reduce((a,r)=>a+r.idealHumidity,0)/humItems.length):storage.hum;
+    document.getElementById('stat-grid').innerHTML=`<div class="stat-card"><div class="stat-val">${recs.length}</div><div class="stat-lbl">Items</div></div><div class="stat-card"><div class="stat-val">${compatible.length}</div><div class="stat-lbl">Compatible</div></div><div class="stat-card"><div class="stat-val">${storage.ideal}°C</div><div class="stat-lbl">Target temp</div></div><div class="stat-card"><div class="stat-val">${avgHum}%</div><div class="stat-lbl">Avg humidity</div></div>`;
+    const container=document.getElementById('recs');container.innerHTML='';
+    if(compatible.length){const lbl=document.createElement('div');lbl.className='slabel';lbl.textContent='Good for '+storage.label.toLowerCase();container.appendChild(lbl);compatible.forEach(r=>container.appendChild(makeCard(r)));}
+    if(incompatible.length){const lbl=document.createElement('div');lbl.className='slabel';lbl.style.marginTop='1rem';lbl.textContent='Consider different storage';container.appendChild(lbl);incompatible.forEach(r=>container.appendChild(makeCard(r)));}
+  }
+  function makeCard(r){
+    const ok=r.compatible,div=document.createElement('div');div.className='rec-card '+(ok?'ok':'warn');
+    const hasHum=r.idealHumidity!=null,hc=hasHum?humColor(r.idealHumidity):null;
+    div.innerHTML=`<div class="rec-name">${r.emoji||'📦'} ${r.name}</div><div class="rec-detail">Temp: ${r.minTemp}°C – ${r.maxTemp}°C · ideal ${r.idealTemp}°C</div><div class="rec-detail">${r.tip}</div>${hasHum?`<div class="hum-section"><div class="hum-header"><span class="hum-label">Humidity: ${r.humidityMin}–${r.humidityMax}% RH · ideal ${Math.round(r.idealHumidity)}%</span><span class="hum-tag" style="background:${hc.tagBg};color:${hc.tagText}">${hc.label}</span></div><div class="hum-bar-wrap"><div class="hum-bar" style="width:${Math.min(r.idealHumidity,100)}%;background:${hc.bar}"></div></div></div>`:''}<div class="rec-status">${ok?'✓ Compatible with selected storage':'⚠ Move to a different storage type'}</div>`;
+    return div;
+  }
+</script>
+</body>
+</html>
